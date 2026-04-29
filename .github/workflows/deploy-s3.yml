@@ -58,8 +58,13 @@ jobs:
             --exclude "README.md" \
             --exclude "LICENSE"
 
-      - name: Invalidate CloudFront cache
+       - name: Invalidate CloudFront Cache
         run: |
+          echo "🔄 Invalidating CloudFront distribution: $CLOUDFRONT_DISTRIBUTION_ID"
           aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
+            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
             --paths "/*"
+          echo "✅ CloudFront cache invalidation started!"
+          # Note: Invalidation typically completes within 1-2 minutes across all edge locations
+          # "/*" invalidates everything — for large sites, you can target specific changed files
+          # AWS gives you 1,000 free invalidation paths per month (/* counts as 
