@@ -1,5 +1,5 @@
 # ============================================================
-# DEPLOY TO AWS S3 — GitHub Actions Workflow
+# DEPLOY TO AWS S3 + CLOUDFRONT — GitHub Actions Workflow
 # ============================================================
 # Automatically uploads the static website to an S3 bucket
 # whenever code is pushed to main or master.
@@ -9,14 +9,15 @@
 #
 # ---- PREREQUISITES ----
 # 1. An S3 bucket configured for static website hosting.
-# 2. An IAM Role with s3:PutObject, s3:DeleteObject, and
-#    s3:ListBucket permissions, trusting the GitHub OIDC provider.
-# 3. Two GitHub repository secrets:
-#      • AWS_ROLE_ARN   — the ARN of the IAM Role
-#      • S3_BUCKET_NAME — the name of the S3 bucket
+# 2. An IAM Role with AmazonS3FullAccess and CloudFrontFullAccess,
+#    trusting the GitHub OIDC provider.
+# 3. Three GitHub repository secrets:
+#      • AWS_ROLE_ARN       — the ARN of the IAM Role
+#      • S3_BUCKET_NAME     — the name of the S3 bucket
+#      • CLOUDFRONT_DIST_ID — the CloudFront distribution ID
 # ============================================================
 
-name: Deploy to S3
+name: Deploy to S3 and CloudFront
 
 on:
   push:
@@ -32,7 +33,7 @@ env:
 
 jobs:
   deploy:
-    name: Upload to S3
+    name: Upload to S3 and Invalidate CloudFront
     runs-on: ubuntu-latest
 
     steps:
@@ -56,3 +57,9 @@ jobs:
             --exclude ".github/*" \
             --exclude "README.md" \
             --exclude "LICENSE"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
+            --paths "/*"
