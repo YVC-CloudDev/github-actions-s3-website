@@ -1,21 +1,6 @@
 # ============================================================
 # DEPLOY TO AWS S3 + CLOUDFRONT — GitHub Actions Workflow
 # ============================================================
-# Automatically uploads the static website to an S3 bucket
-# whenever code is pushed to main or master.
-#
-# Uses OIDC (OpenID Connect) to authenticate with AWS —
-# no static access keys needed.
-#
-# ---- PREREQUISITES ----
-# 1. An S3 bucket configured for static website hosting.
-# 2. An IAM Role with AmazonS3FullAccess and CloudFrontFullAccess,
-#    trusting the GitHub OIDC provider.
-# 3. Three GitHub repository secrets:
-#      • AWS_ROLE_ARN       — the ARN of the IAM Role
-#      • S3_BUCKET_NAME     — the name of the S3 bucket
-#      • CLOUDFRONT_DIST_ID — the CloudFront distribution ID
-# ============================================================
 
 name: Deploy to S3 and CloudFront
 
@@ -58,13 +43,10 @@ jobs:
             --exclude "README.md" \
             --exclude "LICENSE"
 
-       - name: Invalidate CloudFront Cache
+      - name: Invalidate CloudFront Cache
         run: |
-          echo "🔄 Invalidating CloudFront distribution: $CLOUDFRONT_DISTRIBUTION_ID"
+          echo "Invalidating CloudFront distribution..."
           aws cloudfront create-invalidation \
-            --distribution-id $CLOUDFRONT_DISTRIBUTION_ID \
+            --distribution-id "${{ secrets.CLOUDFRONT_DIST_ID }}" \
             --paths "/*"
-          echo "✅ CloudFront cache invalidation started!"
-          # Note: Invalidation typically completes within 1-2 minutes across all edge locations
-          # "/*" invalidates everything — for large sites, you can target specific changed files
-          # AWS gives you 1,000 free invalidation paths per month (/* counts as 
+          echo "CloudFront cache invalidation started!"
